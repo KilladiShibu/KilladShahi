@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sura Mandi Game</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: skyblue;
+    font-family: sans-serif;
+    text-align: center;
+  }
+  canvas {
+    background: #87ceeb;
+    display: block;
+    margin: 0 auto;
+  }
+  #playButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    background: #ff9800;
+    color: white;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="400" height="500"></canvas>
+<button id="playButton">Play Again</button>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const playButton = document.getElementById("playButton");
+
+// Images
+const mandiImg = new Image();
+mandiImg.src = "mandi.png";
+let mandiLoaded = false;
+mandiImg.onload = () => { mandiLoaded = true; };
+
+// Sounds
+const letsGoAudio = new Audio("letsgo.m4a");
+const failAudio = new Audio("shit.m4a");
+const rewardAudio = new Audio("reward.m4a");
+
+let mandiY, gravity, jumpPower, velocity, pipes, score, gameOver, started;
+
+function initGame() {
+  mandiY = canvas.height / 2;
+  gravity = 0.4;
+  jumpPower = -8;
+  velocity = 0;
+  pipes = [];
+  score = 0;
+  gameOver = false;
+  started = true;
+  playButton.style.display = "none";
+}
+
+function drawMandi() {
+  if (mandiLoaded) ctx.drawImage(mandiImg, 80, mandiY, 40, 40);
+  else {
+    ctx.fillStyle = "brown";
+    ctx.fillRect(80, mandiY, 40, 40);
+  }
+}
+
+function createPipe() {
+  const gap = 130;
+  const topHeight = Math.random() * 200 + 50;
+  pipes.push({ x: canvas.width, top: topHeight, bottom: topHeight + gap });
+}
+
+function drawPipes() {
+  ctx.fillStyle = "green";
+  pipes.forEach(pipe => {
+    ctx.fillRect(pipe.x, 0, 50, pipe.top);
+    ctx.fillRect(pipe.x, pipe.bottom, 50, canvas.height - pipe.bottom);
+  });
+}
+
+function drawScore() {
+  ctx.fillStyle = "white";
+  ctx.font = "24px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+}
+
+function update() {
+  if (!started || gameOver) return;
+
+  velocity += gravity;
+  mandiY += velocity;
+
+  if (mandiY + 40 > canvas.height || mandiY < 0) endGame();
+
+  pipes.forEach(pipe => {
+    pipe.x -= 2.5;
+    // Add score when passing a pipe
+    if (pipe.x === 80) {
+      score++;
+      letsGoAudio.currentTime = 0;
+      letsGoAudio.play();
+    }
+    // Collision
+    if (
+      80 + 40 > pipe.x && 80 < pipe.x + 50 &&
+      (mandiY < pipe.top || mandiY + 40 > pipe.bottom)
+    ) endGame();
+  });
+
+  // Spawn new pipes
+  if (pipes.length === 0 || pipes[pipes.length - 1].x < 200) createPipe();
+  pipes = pipes.filter(pipe => pipe.x > -50);
+
+  // Check reward
+  if (score >= 5) showReward();
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawMandi();
+  drawPipes();
+  drawScore();
+}
+
+function jump() {
+  if (!started) {
+    initGame();
+    update();
+  } else {
+    velocity = jumpPower;
+  }
+}
+
+function endGame() {
+  gameOver = true;
+  failAudio.currentTime = 0;
+  failAudio.play();
+  playButton.style.display = "block";
+}
+
+function showReward() {
+  gameOver = true;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "white";
+  ctx.font = "30px Arial";
+  ctx.fillText("Kalli Sura!", 120, 80);
+  if (mandiLoaded) ctx.drawImage(mandiImg, 100, 100, 200, 200);
+  else {
+    ctx.fillStyle = "orange";
+    ctx.fillRect(100, 100, 200, 200);
+  }
+  rewardAudio.currentTime = 0;
+  rewardAudio.play();
+  playButton.style.display = "block";
+}
+
+canvas.addEventListener("click", jump);
+playButton.addEventListener("click", () => {
+  initGame();
+  update();
+});
+
+// Start screen
+ctx.fillStyle = "white";
+ctx.font = "26px Arial";
+ctx.fillText("Tap to start Sura!", 100, 230);
+</script>
+</body>
+</html>
