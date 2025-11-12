@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sura Games - Skins</title>
+<style>
+	html, body { height: 100%; margin: 0; }
+	body {
+		background: url('Background.jpg') no-repeat center center fixed;
+		background-size: cover;
+		font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+		color: #0f172a;
+	}
+	.wrapper {
+		min-height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 24px 16px;
+	}
+	.card {
+		width: 100%;
+		max-width: 720px;
+		background: rgba(255,255,255,.92);
+		border-radius: 16px;
+		border: 1px solid rgba(15,23,42,.12);
+		box-shadow: 0 12px 40px rgba(0,0,0,.18);
+		padding: 20px;
+	}
+	h1 {
+		margin: 0 0 12px;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+		gap: 14px;
+	}
+	@media (max-width: 480px) {
+		.grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+		.card { padding: 16px; }
+		h1 { font-size: 24px; }
+		.btn { padding: 10px 14px; font-size: 14px; }
+		.slot { font-size: 16px; }
+	}
+	.slot {
+		aspect-ratio: 1/1;
+		border-radius: 12px;
+		border: 2px solid #cbd5e1;
+		background: #f1f5f9;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 800;
+		font-size: 18px;
+		color: #0b1220;
+		cursor: pointer;
+		transition: box-shadow .15s ease, border-color .15s ease, transform .08s ease;
+		overflow: hidden;
+	}
+	.slot img { width:100%; height:100%; object-fit: cover; display:block; }
+	.lock {
+		position:absolute;
+		inset:0;
+		background: rgba(0,0,0,.45);
+		color: #fff;
+		display:flex;
+		align-items:center;
+		justify-content:center;
+		font-weight:800;
+		letter-spacing:.5px;
+	}
+	.slot:hover { box-shadow: 0 0 0 4px rgba(56,189,248,.2); border-color: #38bdf8; }
+	.slot:active { transform: translateY(1px); }
+	.slot.selected { border-color: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,.25); }
+	.actions {
+		margin-top: 16px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.btn {
+		appearance: none;
+		padding: 12px 16px;
+		font-size: 16px;
+		font-weight: 800;
+		color: #0f172a;
+		background: #38bdf8;
+		border: none;
+		border-radius: 10px;
+		cursor: pointer;
+		transition: transform .08s ease, filter .2s ease, box-shadow .2s ease;
+		box-shadow: 0 10px 30px rgba(56,189,248,.35), inset 0 0 0 2px rgba(255,255,255,.25);
+	}
+	.btn:hover { filter: brightness(1.05); }
+	.btn:active { transform: translateY(1px) scale(0.99); }
+	.helper a { color: #0ea5e9; text-decoration: none; }
+	.helper a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+	<div class="wrapper">
+		<div class="card">
+			<h1>Select a Skin</h1>
+			<div class="grid" id="grid">
+				<div class="slot" data-skin="Mandhi" style="position:relative;"><img src="mandhi.png" alt="Mandhi"></div>
+				<div class="slot" data-skin="ρg" style="position:relative;"><img src="ρg.png" alt="ρg"><div class="lock">Locked</div></div>
+				<div class="slot" data-skin="skin3" style="position:relative;"><img src="skin3.png" alt="Skin 3"><div class="lock">Locked</div></div>
+				<div class="slot" data-skin="skin4" style="position:relative;"><img src="skin4.png" alt="Skin 4"><div class="lock">Locked</div></div>
+				<div class="slot" data-skin="skin5" style="position:relative;"><img src="skin5.png" alt="Skin 5"><div class="lock">Locked</div></div>
+				<div class="slot" data-skin="skin6" style="position:relative;"><img src="skin6.png" alt="Skin 6"><div class="lock">Locked</div></div>
+			</div>
+			<div class="actions">
+				<button class="btn" id="equipBtn" type="button">Equip</button>
+				<div class="helper"><a href="home.html">Back to Home</a></div>
+			</div>
+			<div id="status" style="margin-top:10px;color:#16a34a;font-weight:700;"></div>
+		</div>
+	</div>
+
+	<script>
+		(function () {
+			function userKey(key) {
+				var u='guest'; try { u = localStorage.getItem('sg_username') || 'guest'; } catch(e){}
+				return 'sg_u:' + u + ':' + key;
+			}
+			function getUserJson(key, def){ try { return JSON.parse(localStorage.getItem(userKey(key))||def); } catch(e){ try { return JSON.parse(def); } catch(e2){ return []; } } }
+			function setUserJson(key, val){ try { localStorage.setItem(userKey(key), JSON.stringify(val)); } catch(e){} }
+			function getUserStr(key, def){ try { var v = localStorage.getItem(userKey(key)); return v==null?(def||''):v; } catch(e){ return def||''; } }
+			function setUserStr(key, val){ try { localStorage.setItem(userKey(key), val); } catch(e){} }
+			// migrate global -> user scope once
+			(function migrate(){
+				try {
+					if (localStorage.getItem(userKey('migrated')) === '1') return;
+					var map = { selected_skin:'sg_selected_skin', owned_skins:'sg_owned_skins' };
+					Object.keys(map).forEach(function(k){
+						var v = localStorage.getItem(map[k]);
+						if (v != null) localStorage.setItem(userKey(k), v);
+					});
+					localStorage.setItem(userKey('migrated'),'1');
+				} catch(e){}
+			})();
+
+			var selected = '';
+			try {
+				selected = getUserStr('selected_skin','Mandhi');
+				if (!getUserStr('selected_skin')) setUserStr('selected_skin','Mandhi');
+				if (selected === 'skin2') { setUserStr('selected_skin', 'ρg'); selected = 'ρg'; }
+			} catch (e) {}
+
+			// migrate owned list old id 'skin2' -> 'ρg'
+			(function migrateOwned(){
+				try {
+					var owned = getUserJson('owned_skins','[]');
+					var changed = false;
+					for (var i=0;i<owned.length;i++) {
+						if (owned[i] === 'skin2') { owned[i] = 'ρg'; changed = true; }
+					}
+					if (changed) setUserJson('owned_skins', owned);
+				} catch(e){}
+			})();
+
+			function getOwned(){ return getUserJson('owned_skins','[]'); }
+			function isOwned(id){ if (id==='Mandhi') return true; var o=getOwned(); for (var i=0;i<o.length;i++) if (o[i]===id) return true; return false; }
+
+			// Reflect lock state
+			function renderLocks() {
+				var slots = document.querySelectorAll('.slot');
+				for (var i=0;i<slots.length;i++) {
+					var id = slots[i].getAttribute('data-skin');
+					if (id === 'Mandhi') continue;
+					var overlay = slots[i].querySelector('.lock');
+					if (!overlay) continue;
+					if (isOwned(id)) overlay.style.display = 'none';
+					else overlay.style.display = 'flex';
+				}
+			}
+
+			function select(el) {
+				var slots = document.querySelectorAll('.slot');
+				for (var i=0;i<slots.length;i++) slots[i].classList.remove('selected');
+				if (el) el.classList.add('selected');
+			}
+
+			var initial = selected && document.querySelector('.slot[data-skin="' + selected + '"]');
+			if (initial) select(initial);
+
+			document.getElementById('grid').addEventListener('click', function (e) {
+				var target = e.target.closest('.slot');
+				if (!target) return;
+				var id = target.getAttribute('data-skin');
+				if (!isOwned(id)) {
+					document.getElementById('status').style.color = '#b91c1c';
+					document.getElementById('status').textContent = 'This skin is locked. Buy it in Shop.';
+					return;
+				}
+				selected = id;
+				select(target);
+				document.getElementById('status').textContent = '';
+			});
+
+			document.getElementById('equipBtn').addEventListener('click', function () {
+				if (!selected) {
+					document.getElementById('status').textContent = 'Please select a skin first.';
+					document.getElementById('status').style.color = '#b91c1c';
+					return;
+				}
+				try { setUserStr('selected_skin', selected); } catch (e) {}
+				document.getElementById('status').style.color = '#16a34a';
+				document.getElementById('status').textContent = 'Equipped ' + selected + '!';
+			});
+
+			renderLocks();
+		})();
+	</script>
+</body>
+</html>
+
+

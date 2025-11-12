@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sura Mandi Game</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: url('GameBackground.jpg') no-repeat center center fixed;
+    background-size: cover;
+    font-family: sans-serif;
+    text-align: center;
+  }
+  canvas {
+    background: transparent;
+    display: block;
+    margin: 0 auto;
+  }
+  /* Round menu button (top-left) */
+  #menuBtn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #111827;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    cursor: pointer;
+  }
+  /* Menu overlay */
+  #menuOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .menuCard {
+    background: #0b1220;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 320px;
+    border: 1px solid #334155;
+  }
+  .menuTitle { margin: 0 0 12px; }
+  .menuRow { display: flex; gap: 8px; margin-bottom: 8px; }
+  .menuBtn {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+    background: #111b31;
+    color: #e2e8f0;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .levelRow { display: none; gap: 8px; }
+  .levelBtn { flex: 1; }
+  .levelBtn.active {
+    border-color: #38bdf8;
+    box-shadow:
+      0 0 8px rgba(56,189,248,.95),
+      0 0 18px rgba(56,189,248,.6),
+      inset 0 0 0 2px rgba(255,255,255,.2);
+  }
+  /* Play again button existing */
+  #playButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    background: #ff9800;
+    color: white;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="400" height="500"></canvas>
+<button id="menuBtn" title="Menu">☰</button>
+<button id="playButton">Play Again</button>
+
+<div id="menuOverlay">
+  <div class="menuCard">
+    <h3 class="menuTitle">Paused</h3>
+    <div class="menuRow">
+      <button id="resumeBtn" class="menuBtn">Resume</button>
+      <button id="levelBtn" class="menuBtn">Level</button>
+      <button id="exitBtn" class="menuBtn">Exit</button>
+    </div>
+    <div class="levelRow" id="levelRow">
+      <button data-level="low" class="menuBtn levelBtn">Low</button>
+      <button data-level="medium" class="menuBtn levelBtn">Medium</button>
+      <button data-level="hard" class="menuBtn levelBtn">Hard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const playButton = document.getElementById("playButton");
+const menuBtn = document.getElementById("menuBtn");
+const menuOverlay = document.getElementById("menuOverlay");
+const resumeBtn = document.getElementById("resumeBtn");
+const levelBtn = document.getElementById("levelBtn");
+const exitBtn = document.getElementById("exitBtn");
+const levelRow = document.getElementById("levelRow");
+
+// Player skin image (uses equipped skin from localStorage)
+function userKey(key) {
+  let u = 'guest';
+  try { u = localStorage.getItem('sg_username') || 'guest'; } catch(e) {}
+  return 'sg_u:' + u + ':' + key;
+}
+function getUserStr(key, def) {
+  try { const v = localStorage.getItem(userKey(key)); return v == null ? (def||'') : v; } catch(e){ return def||''; }
+}
+function setUserStr(key, val) {
+  try { localStorage.setItem(userKey(key), val); } catch(e) {}
+}
+function getUserNum(key, def) {
+  try { return parseInt(localStorage.getItem(userKey(key)) || String(def||0), 10) || (def||0); } catch(e){ return def||0; }
+}
+function setUserNum(key, val) {
+  try { localStorage.setItem(userKey(key), String(val)); } catch(e) {}
+}
+// migrate old global to user scope once
+(function migrate(){
+  try {
+    const flag = localStorage.getItem(userKey('migrated'));
+    if (flag === '1') return;
+    const map = { coins:'sg_coins', selected_skin:'sg_selected_skin', level:'sg_level', owned_skins:'sg_owned_skins' };
+    Object.keys(map).forEach(k=>{
+      const v = localStorage.getItem(map[k]);
+      if (v != null) localStorage.setItem(userKey(k), v);
+    });
+    localStorage.setItem(userKey('migrated'),'1');
+  } catch(e){}
+})();
+
+function getEquippedSkinId() {
+  try { return getUserStr('selected_skin','Mandhi'); } catch (e) { return 'Mandhi'; }
+}
+function getSkinSrcById(id) {
+  if (id === 'Mandhi') return 'mandhi.png';
+  if (id === 'ρg') return 'ρg.png';
+  if (id === 'skin3') return 'skin3.png';
+  if (id === 'skin4') return 'skin4.png';
+  if (id === 'skin5') return 'skin5.png';
+  if (id === 'skin6') return 'skin6.png';
+  return 'mandhi.png';
+}
+const mandiImg = new Image();
+mandiImg.src = getSkinSrcById(getEquippedSkinId());
+let mandiLoaded = false;
+mandiImg.onload = () => { mandiLoaded = true; };
+
+// Sounds
+const letsGoAudio = new Audio("letsgo.m4a");
+const failAudio = new Audio("shit.m4a");
+const rewardAudio = new Audio("reward.m4a");
+const backgroundMusic = new Audio("Background music 1.mp3");
+const adiSakkeAudio = new Audio("adi sakke.mp3");
+
+// Configure background music to loop
+backgroundMusic.loop = true;
+
+let mandiY, gravity, jumpPower, velocity, pipes, score, gameOver, started, paused;
+let pipeSpeed = 2.5;
+let pipeGap = 130;
+let level = (getUserStr('level') || 'low'); // low | medium | hard
+let awardedChunks = 0; // deprecated when awarding at end only
+let lastMilestone = -1; // Track last milestone score to avoid duplicate plays
+
+function updateLevelUI() {
+  var buttons = document.querySelectorAll('.levelBtn');
+  Array.prototype.forEach.call(buttons, function(b){
+    if (b.getAttribute('data-level') === level) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+}
+
+function applyLevel(lvl) {
+  level = lvl;
+  setUserStr('level', lvl);
+  if (lvl === 'low') { pipeSpeed = 1.8; pipeGap = 200; gravity = 0.36; jumpPower = -7.6; }
+  else if (lvl === 'medium') { pipeSpeed = 2.4; pipeGap = 150; gravity = 0.44; jumpPower = -8.4; }
+  else { pipeSpeed = 3.2; pipeGap = 110; gravity = 0.52; jumpPower = -9.2; }
+  updateLevelUI();
+}
+
+function initGame() {
+  mandiY = canvas.height / 2;
+  gravity = 0.4; // will be adjusted by level
+  jumpPower = -8; // will be adjusted by level
+  velocity = 0;
+  pipes = [];
+  score = 0;
+  gameOver = false;
+  started = true;
+  paused = false;
+  awardedChunks = 0;
+  lastMilestone = -1;
+  playButton.style.display = "none";
+  applyLevel(level);
+  // Stop any playing adi sakke audio
+  try {
+    adiSakkeAudio.pause();
+    adiSakkeAudio.currentTime = 0;
+  } catch (e) {}
+  // Start background music when game starts
+  try {
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.play().catch(function(e) {});
+  } catch (e) {}
+}
+
+function drawMandi() {
+  if (mandiLoaded) ctx.drawImage(mandiImg, 80, mandiY, 40, 40);
+  else {
+    ctx.fillStyle = "brown";
+    ctx.fillRect(80, mandiY, 40, 40);
+  }
+}
+
+function createPipe() {
+  const gap = pipeGap;
+  const topHeight = Math.random() * 200 + 50;
+  pipes.push({ x: canvas.width, top: topHeight, bottom: topHeight + gap, scored: false });
+}
+
+function drawPipes() {
+  ctx.fillStyle = "green";
+  pipes.forEach(pipe => {
+    // Draw the top pipe up to the top edge
+    var topHeight = Math.ceil(pipe.top);
+    ctx.fillRect(pipe.x, 0, 50, topHeight);
+    // Draw the bottom pipe starting at the gap bottom and extend past canvas edge
+    var bottomY = Math.floor(pipe.bottom);
+    var extra = canvas.height; // extend beyond canvas by a full canvas height to guarantee coverage
+    ctx.fillRect(pipe.x, bottomY, 50, (canvas.height - bottomY) + extra);
+  });
+}
+
+function drawScore() {
+  ctx.fillStyle = "white";
+  ctx.font = "24px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+}
+
+function handleMilestoneMusic() {
+  // Check if score is a multiple of 5 and we haven't played for this milestone yet
+  if (score > 0 && score % 5 === 0 && score !== lastMilestone) {
+    lastMilestone = score;
+    // Stop background music
+    try {
+      backgroundMusic.pause();
+    } catch (e) {}
+    // Play adi sakke
+    try {
+      adiSakkeAudio.currentTime = 0;
+      adiSakkeAudio.play().catch(function(e) {});
+      // When adi sakke finishes, resume background music
+      adiSakkeAudio.onended = function() {
+        try {
+          backgroundMusic.currentTime = 0;
+          backgroundMusic.play().catch(function(e) {});
+        } catch (e) {}
+      };
+    } catch (e) {}
+  }
+}
+
+function update() {
+  if (!started || gameOver || paused) return;
+
+  velocity += gravity;
+  mandiY += velocity;
+
+  if (mandiY + 40 > canvas.height || mandiY < 0) endGame();
+
+  pipes.forEach(pipe => {
+    pipe.x -= pipeSpeed;
+    // Add score when the pipe has fully passed the player x-position (80)
+    if (!pipe.scored && (pipe.x + 50) < 80) {
+      pipe.scored = true;
+      score++;
+      letsGoAudio.currentTime = 0;
+      try { letsGoAudio.play(); } catch (e) {}
+      // Check for milestone (5, 10, 15, 20, 25, etc.)
+      handleMilestoneMusic();
+    }
+    // Collision
+    if (
+      80 + 40 > pipe.x && 80 < pipe.x + 50 &&
+      (mandiY < pipe.top || mandiY + 40 > pipe.bottom)
+    ) endGame();
+  });
+
+  // Spawn new pipes
+  if (pipes.length === 0 || pipes[pipes.length - 1].x < 200) createPipe();
+  pipes = pipes.filter(pipe => pipe.x > -50);
+
+  // No early stop at 5; continue indefinitely until fail
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawMandi();
+  drawPipes();
+  drawScore();
+}
+
+function jump() {
+  if (!started) {
+    initGame();
+    update();
+  } else {
+    velocity = jumpPower;
+  }
+}
+
+function endGame() {
+  gameOver = true;
+  // Stop background music when player dies
+  try {
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+  } catch (e) {}
+  // Stop adi sakke if playing
+  try {
+    adiSakkeAudio.pause();
+    adiSakkeAudio.currentTime = 0;
+  } catch (e) {}
+  // Play death sound
+  failAudio.currentTime = 0;
+  try { failAudio.play(); } catch (e) {}
+  playButton.style.display = "block";
+  // Award coins based on final score chunks of 5 and level
+  try {
+    var chunks = Math.floor(score / 5);
+    if (chunks > 0) {
+      var perChunk = 1; // low
+      if (level === 'medium') perChunk = 4;
+      else if (level === 'hard') perChunk = 6;
+      var current = getUserNum('coins', 0);
+      setUserNum('coins', current + (chunks * perChunk));
+    }
+  } catch (e) {}
+}
+
+function showReward() {
+  gameOver = true;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "white";
+  ctx.font = "30px Arial";
+  ctx.fillText("Kalli Sura!", 120, 80);
+  if (mandiLoaded) ctx.drawImage(mandiImg, 100, 100, 200, 200);
+  else {
+    ctx.fillStyle = "orange";
+    ctx.fillRect(100, 100, 200, 200);
+  }
+  rewardAudio.currentTime = 0;
+  rewardAudio.play();
+  playButton.style.display = "block";
+}
+
+canvas.addEventListener("click", jump);
+playButton.addEventListener("click", () => {
+  initGame();
+  update();
+});
+
+// Menu controls
+menuBtn.addEventListener("click", () => {
+  paused = true;
+  menuOverlay.style.display = "flex";
+  // Pause background music when game is paused
+  try {
+    backgroundMusic.pause();
+  } catch (e) {}
+});
+resumeBtn.addEventListener("click", () => {
+  menuOverlay.style.display = "none";
+  paused = false;
+  // Resume background music when game resumes (only if not game over and adi sakke is not playing)
+  if (!gameOver && adiSakkeAudio.paused) {
+    try {
+      backgroundMusic.play().catch(function(e) {});
+    } catch (e) {}
+  }
+  update();
+});
+levelBtn.addEventListener("click", () => {
+  levelRow.style.display = levelRow.style.display === "flex" ? "none" : "flex";
+});
+menuOverlay.addEventListener("click", (e) => {
+  if (e.target === menuOverlay) { /* click outside */ }
+});
+Array.prototype.forEach.call(document.querySelectorAll('.levelBtn'), function(btn){
+  btn.addEventListener('click', function(){
+    applyLevel(this.getAttribute('data-level'));
+    levelRow.style.display = "none";
+  });
+});
+exitBtn.addEventListener("click", () => {
+  window.location.href = "home.html";
+});
+
+// Start screen
+ctx.fillStyle = "white";
+ctx.font = "26px Arial";
+ctx.fillText("Tap to start Sura!", 100, 230);
+
+// Initialize visual selection state
+updateLevelUI();
+</script>
+</body>
+</html>
