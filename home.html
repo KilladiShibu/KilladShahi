@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sura Games - Home</title>
+<style>
+	html, body {
+		height: 100%;
+		margin: 0;
+	}
+	body {
+		background: url('Background.jpg') no-repeat center center fixed;
+		background-size: cover;
+		font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+		color: #0f172a;
+	}
+	.title {
+		position: absolute;
+		top: 24px;
+		left: 0;
+		right: 0;
+		text-align: center;
+		font-size: clamp(20px, 6vw, 32px);
+		font-weight: 800;
+		color: #7df9ff;
+		margin: 0;
+		padding: 0 12px;
+		text-shadow:
+			0 0 6px rgba(125,249,255,.9),
+			0 0 12px rgba(125,249,255,.8),
+			0 0 20px rgba(16,185,129,.5),
+			0 0 35px rgba(16,185,129,.35);
+		-webkit-text-stroke: 1px rgba(0,0,0,.25);
+		animation: glow 2.2s ease-in-out infinite alternate;
+	}
+	@keyframes glow {
+		0% {
+			text-shadow:
+				0 0 4px rgba(125,249,255,.7),
+				0 0 10px rgba(125,249,255,.6),
+				0 0 16px rgba(16,185,129,.4),
+				0 0 26px rgba(16,185,129,.25);
+		}
+		100% {
+			text-shadow:
+				0 0 8px rgba(125,249,255,1),
+				0 0 18px rgba(125,249,255,.95),
+				0 0 28px rgba(16,185,129,.6),
+				0 0 46px rgba(16,185,129,.45);
+		}
+	}
+	.topbar {
+		position: fixed;
+		top: 12px;
+		right: 12px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		background: rgba(255,255,255,.9);
+		border: 1px solid rgba(15,23,42,.12);
+		border-radius: 999px;
+		padding: 8px 12px;
+		box-shadow: 0 8px 24px rgba(0,0,0,.12);
+		z-index: 10;
+	}
+	.coin {
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: radial-gradient(circle at 30% 30%, #fff59d, #fbbf24 45%, #d97706 85%);
+		box-shadow: inset 0 0 0 2px rgba(0,0,0,.08);
+	}
+	.center {
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.stack {
+		display: flex;
+		gap: 16px;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+	.btn {
+		min-width: 120px;
+		padding: 14px 18px;
+		font-size: clamp(16px, 4vw, 18px);
+		font-weight: 800;
+		background: #38bdf8;
+		color: #0b1220;
+		border: none;
+		border-radius: 12px;
+		cursor: pointer;
+		transition: transform .08s ease, filter .2s ease, box-shadow .2s ease;
+		box-shadow: 0 10px 30px rgba(56,189,248,.35), inset 0 0 0 2px rgba(255,255,255,.25);
+	}
+	.btn:hover { filter: brightness(1.05); }
+	.btn:active { transform: translateY(1px) scale(0.99); }
+	.linklike { text-decoration: none; }
+	.account-area {
+		margin-top: 20px;
+		display: flex;
+		justify-content: center;
+	}
+	.account-btn {
+		width: 60px;
+		height: 60px;
+		border-radius: 50%;
+		border: none;
+		background: rgba(15,23,42,.82);
+		color: #7df9ff;
+		font-size: 22px;
+		font-weight: 700;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 18px 36px rgba(15,23,42,.45);
+		transition: transform .1s ease, filter .15s ease;
+	}
+	.account-btn:hover { filter: brightness(1.18); }
+	.account-btn:active { transform: translateY(1px) scale(.97); }
+	.account-panel {
+		position: fixed;
+		inset: 0;
+		background: rgba(15,23,42,.62);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 16px;
+		z-index: 40;
+	}
+	.account-panel[hidden] { display: none; }
+	.account-card {
+		width: 100%;
+		max-width: 360px;
+		background: rgba(15,23,42,.94);
+		border-radius: 18px;
+		padding: 24px;
+		color: #e2e8f0;
+		box-shadow: 0 22px 45px rgba(15,23,42,.5);
+		border: 1px solid rgba(148,163,184,.18);
+		position: relative;
+	}
+	.account-card h2 {
+		margin: 0 0 14px;
+		font-size: 22px;
+	}
+	.account-close {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		background: transparent;
+		border: none;
+		color: #94a3b8;
+		font-size: 22px;
+		cursor: pointer;
+	}
+	.account-list {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.account-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 0;
+		border-bottom: 1px solid rgba(148,163,184,.18);
+	}
+	.account-row:last-child { border-bottom: none; }
+	.account-row .label {
+		font-size: 13px;
+		color: #94a3b8;
+		min-width: 70px;
+	}
+	.account-row .value {
+		font-weight: 700;
+		font-size: 15px;
+		color: #f8fafc;
+		flex: 1;
+		word-break: break-word;
+	}
+	.account-row button {
+		background: rgba(56,189,248,.18);
+		color: #38bdf8;
+		border: 1px solid rgba(56,189,248,.4);
+		border-radius: 999px;
+		padding: 6px 14px;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background .15s ease, color .15s ease;
+	}
+	.account-row button:hover {
+		background: rgba(56,189,248,.28);
+		color: #e0f2fe;
+	}
+	@media (max-width: 480px) {
+		.stack {
+			flex-direction: column;
+			width: 100%;
+		}
+		.btn {
+			width: 100%;
+			min-width: unset;
+		}
+		.topbar {
+			top: 8px;
+			right: 8px;
+			padding: 6px 10px;
+			font-size: clamp(12px, 3.5vw, 14px);
+			gap: 6px;
+		}
+		.coin {
+			width: clamp(16px, 4vw, 18px);
+			height: clamp(16px, 4vw, 18px);
+			flex-shrink: 0;
+		}
+		#coinCount {
+			font-size: clamp(12px, 3.5vw, 14px) !important;
+			white-space: nowrap;
+		}
+		.title {
+			top: 12px;
+			font-size: clamp(18px, 7vw, 28px);
+		}
+		.account-btn {
+			width: 54px;
+			height: 54px;
+			font-size: 20px;
+		}
+	}
+</style>
+</head>
+<body>
+	<h1 class="title">Welcome To Sura Games</h1>
+	<div class="topbar" title="Your coins">
+		<div class="coin"></div>
+		<span id="coinCount" style="font-weight:800;">0</span>
+	</div>
+
+	<div class="center">
+		<div>
+			<div class="stack">
+				<a class="linklike" href="Skin.html"><button class="btn" type="button">Skin</button></a>
+				<a class="linklike" href="game.html"><button class="btn" type="button">Play</button></a>
+				<a class="linklike" href="shop.html"><button class="btn" type="button">Shop</button></a>
+			</div>
+			<div id="equippedInfo" style="margin-top:12px;text-align:center;font-weight:700;color:#0b1220;"></div>
+			<div class="account-area" id="accountArea" hidden>
+				<button class="account-btn" id="accountBtn" type="button" title="Account">A</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="account-panel" id="accountPanel" hidden>
+		<div class="account-card">
+			<button class="account-close" id="accountClose" type="button" aria-label="Close account panel">&times;</button>
+			<h2>Your Account</h2>
+		    	<div class="account-list">
+				<div class="account-row">
+					<span class="label">Username</span>
+					<span class="value" id="accountUsername">-</span>
+					<button type="button" data-field="username">Change</button>
+				</div>
+				<div class="account-row">
+					<span class="label">Email</span>
+					<span class="value" id="accountEmail">-</span>
+					<button type="button" data-field="email">Change</button>
+				</div>
+				<div class="account-row">
+					<span class="label">Password</span>
+					<span class="value" id="accountPassword">-</span>
+					<button type="button" data-field="password">Change</button>
+				</div>
+		    	</div>
+		</div>
+	</div>
+
+	<script>
+		(function () {
+			var ACCOUNTS_KEY = 'sg_accounts';
+
+			// Elements
+			var coinSpan = document.getElementById('coinCount');
+			var equippedInfo = document.getElementById('equippedInfo');
+			var accountArea = document.getElementById('accountArea');
+			var accountBtn = document.getElementById('accountBtn');
+			var accountPanel = document.getElementById('accountPanel');
+			var accountClose = document.getElementById('accountClose');
+			var accountUsernameSpan = document.getElementById('accountUsername');
+			var accountEmailSpan = document.getElementById('accountEmail');
+			var accountPasswordSpan = document.getElementById('accountPassword');
+
+			function userKey(key) {
+				var u = '';
+				try { u = localStorage.getItem('sg_username') || 'guest'; } catch(e){ u = 'guest'; }
+				return 'sg_u:' + u + ':' + key;
+			}
+			function getNum(key, def) {
+				try { return parseInt(localStorage.getItem(userKey(key)) || String(def || 0), 10) || (def||0); } catch(e){ return def||0; }
+			}
+			function getStr(key, def) {
+				try { var v = localStorage.getItem(userKey(key)); return v == null ? (def||'') : v; } catch(e){ return def||''; }
+			}
+			function setStr(key, val) {
+				try { localStorage.setItem(userKey(key), val); } catch(e){}
+			}
+
+			function loadAccounts() {
+				try {
+					var raw = localStorage.getItem(ACCOUNTS_KEY);
+					return raw ? JSON.parse(raw) : [];
+				} catch (e) {
+					return [];
+				}
+			}
+
+			function saveAccounts(list) {
+				try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(list)); } catch (e) {}
+			}
+
+			function normalizeUsername(str) {
+				return (str || '').toLowerCase();
+			}
+
+			function findAccountByUsername(username) {
+				var normalized = normalizeUsername(username);
+				if (!normalized) return null;
+				var accounts = loadAccounts();
+				for (var i = 0; i < accounts.length; i++) {
+					if (normalizeUsername(accounts[i].username) === normalized) {
+						return accounts[i];
+					}
+				}
+				return null;
+			}
+
+			function findAccountByEmail(email) {
+				var normalized = (email || '').toLowerCase();
+				if (!normalized) return null;
+				var accounts = loadAccounts();
+				for (var i = 0; i < accounts.length; i++) {
+					if ((accounts[i].email || '').toLowerCase() === normalized) {
+						return accounts[i];
+					}
+				}
+				return null;
+			}
+
+			function isEmail(str) {
+				return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
+			}
+
+			function maskPassword(pwd) {
+				if (!pwd) return '••••';
+				var length = Math.max(4, pwd.length);
+				var chars = '';
+				for (var i = 0; i < length; i++) chars += '•';
+				return chars;
+			}
+
+			function renameUserNamespace(oldName, newName) {
+				if (!oldName || !newName || oldName === newName) return;
+				var prefixOld = 'sg_u:' + oldName + ':';
+				var prefixNew = 'sg_u:' + newName + ':';
+				var toCopy = [];
+				for (var i = 0; i < localStorage.length; i++) {
+					var key = localStorage.key(i);
+					if (key && key.indexOf(prefixOld) === 0) {
+						toCopy.push(key);
+					}
+				}
+				for (var j = 0; j < toCopy.length; j++) {
+					var oldKey = toCopy[j];
+					var value = localStorage.getItem(oldKey);
+					var newKey = prefixNew + oldKey.substring(prefixOld.length);
+					localStorage.setItem(newKey, value);
+					localStorage.removeItem(oldKey);
+				}
+			}
+
+			function refreshAccountUI() {
+				var username = localStorage.getItem('sg_username') || '';
+				var account = findAccountByUsername(username);
+				if (!username || !account) {
+					if (accountArea) accountArea.hidden = true;
+					if (accountPanel) accountPanel.hidden = true;
+					return;
+				}
+				if (accountArea) {
+					accountArea.hidden = false;
+					if (accountBtn) {
+						var label = account.name && account.name.trim().charAt(0)
+							? account.name.trim().charAt(0)
+							: account.username.charAt(0);
+						accountBtn.textContent = (label || 'A').toUpperCase();
+					}
+				}
+				if (accountUsernameSpan) accountUsernameSpan.textContent = account.username;
+				if (accountEmailSpan) accountEmailSpan.textContent = account.email || '—';
+				if (accountPasswordSpan) accountPasswordSpan.textContent = maskPassword(account.password || '');
+			}
+
+			function openAccountPanel() {
+				refreshAccountUI();
+				if (accountPanel) accountPanel.hidden = false;
+			}
+
+			function closeAccountPanel() {
+				if (accountPanel) accountPanel.hidden = true;
+			}
+
+			function handleAccountChange(field) {
+				var username = localStorage.getItem('sg_username') || '';
+				var accounts = loadAccounts();
+				var idx = -1;
+				for (var i = 0; i < accounts.length; i++) {
+					if (normalizeUsername(accounts[i].username) === normalizeUsername(username)) {
+						idx = i;
+						break;
+					}
+				}
+				var account = idx >= 0 ? accounts[idx] : null;
+				if (!account) {
+					alert('No account information found.');
+					return;
+				}
+
+				function updateAccounts() {
+					if (idx >= 0) {
+						accounts[idx] = account;
+					}
+					saveAccounts(accounts);
+					refreshAccountUI();
+				}
+
+				if (field === 'username') {
+					var newUsername = prompt('Enter a new username (lowercase letters, numbers, underscore only):', account.username);
+					if (!newUsername) return;
+					newUsername = newUsername.trim().toLowerCase();
+					newUsername = newUsername.replace(/[^a-z0-9_]/g, '');
+					if (newUsername.length < 3 || newUsername.length > 20) {
+						alert('Username must be 3-20 characters.');
+						return;
+					}
+					if (newUsername === account.username) {
+						alert('Username is unchanged.');
+						return;
+					}
+					var existingUser = findAccountByUsername(newUsername);
+					if (existingUser && normalizeUsername(existingUser.username) !== normalizeUsername(account.username)) {
+						alert('That username is already in use.');
+						return;
+					}
+					renameUserNamespace(account.username, newUsername);
+					account.username = newUsername;
+					try { localStorage.setItem('sg_username', newUsername); } catch (err) {}
+					updateAccounts();
+					alert('Username updated.');
+				} else if (field === 'email') {
+					var newEmail = prompt('Enter a new email address:', account.email || '');
+					if (!newEmail) return;
+					newEmail = newEmail.trim().toLowerCase();
+					if (!isEmail(newEmail)) {
+						alert('Please enter a valid email address.');
+						return;
+					}
+					var existing = findAccountByEmail(newEmail);
+					if (existing && normalizeUsername(existing.username) !== normalizeUsername(account.username)) {
+						alert('That email is already linked to another account.');
+						return;
+					}
+					account.email = newEmail;
+					try { localStorage.setItem('sg_user_email', newEmail); } catch (err) {}
+					updateAccounts();
+					alert('Email updated.');
+				} else if (field === 'password') {
+					var current = prompt('Enter your current password:');
+					if (current !== account.password) {
+						alert('Incorrect current password.');
+						return;
+					}
+					var newPassword = prompt('Enter a new password (minimum 4 characters):');
+					if (!newPassword || newPassword.length < 4) {
+						alert('Password must be at least 4 characters.');
+						return;
+					}
+					var confirmPassword = prompt('Confirm new password:');
+					if (confirmPassword !== newPassword) {
+						alert('Passwords do not match.');
+						return;
+					}
+					account.password = newPassword;
+					updateAccounts();
+					alert('Password updated.');
+				}
+			}
+
+			// migrate old global keys into user-scoped once
+			(function migrateToUserScope(){
+				try {
+					if (localStorage.getItem(userKey('migrated')) === '1') return;
+					var globals = ['sg_coins','sg_selected_skin','sg_level','sg_owned_skins'];
+					globals.forEach(function(g){
+						var v = localStorage.getItem(g);
+						if (v != null) {
+							localStorage.setItem(userKey(g.replace('sg_','')), v);
+						}
+					});
+					localStorage.setItem(userKey('migrated'), '1');
+				} catch(e){}
+			})();
+
+			// Coins
+			if (coinSpan) {
+				coinSpan.textContent = String(getNum('coins', 0));
+			}
+
+			// Default level 'low' if not set
+			try {
+				if (!getStr('level')) setStr('level','low');
+			} catch (e) {}
+
+			// Default skin to Mandhi if none equipped
+			try {
+				var skin = getStr('selected_skin');
+				if (skin === 'Mandi') { setStr('selected_skin','Mandhi'); skin = 'Mandhi'; }
+				if (!skin) { setStr('selected_skin','Mandhi'); skin = 'Mandhi'; }
+				if (equippedInfo) equippedInfo.textContent = 'Equipped: ' + skin;
+			} catch (e) {}
+
+			refreshAccountUI();
+
+			if (accountBtn) {
+				accountBtn.addEventListener('click', openAccountPanel);
+			}
+			if (accountClose) {
+				accountClose.addEventListener('click', closeAccountPanel);
+			}
+			if (accountPanel) {
+				accountPanel.addEventListener('click', function (e) {
+					if (e.target === accountPanel) {
+						closeAccountPanel();
+					}
+				});
+				var changeButtons = accountPanel.querySelectorAll('button[data-field]');
+				for (var i = 0; i < changeButtons.length; i++) {
+					(function(btn){
+						btn.addEventListener('click', function () {
+							handleAccountChange(btn.getAttribute('data-field'));
+						});
+					})(changeButtons[i]);
+				}
+			}
+		})();
+	</script>
+</body>
+</html>
+
+
